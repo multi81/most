@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b8cff"/>
+      <stop offset="1" stop-color="#0a4fd6"/>
+    </linearGradient>
+    <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#gl)"/>
+  <!-- арка моста -->
+  <path d="M40 150 Q128 46 216 150" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+  <!-- полотно -->
+  <rect x="34" y="146" width="188" height="16" rx="8" fill="#fff"/>
+  <!-- ванты -->
+  <g stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".9">
+    <line x1="84" y1="112" x2="84" y2="146"/>
+    <line x1="128" y1="96" x2="128" y2="146"/>
+    <line x1="172" y1="112" x2="172" y2="146"/>
+  </g>
+  <!-- опоры -->
+  <rect x="58" y="160" width="16" height="48" rx="6" fill="#fff" opacity=".85"/>
+  <rect x="182" y="160" width="16" height="48" rx="6" fill="#fff" opacity=".85"/>
+  <!-- вода -->
+  <path d="M44 214 q14 -8 28 0 t28 0 t28 0 t28 0 t28 0 t28 0" fill="none" stroke="#bfe0ff" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+</svg>

@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мост</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+/* Токены «Моста» — те же имена пойдут в мобильные версии (единый дизайн). */
+:root{
+  --bg:#f2f2f7; --surface:#ffffff; --surface-2:#f7f7fa; --ink:#1c1c1e; --ink-2:#6c6c70; --ink-3:#a1a1a6;
+  --line:rgba(60,60,67,.12); --accent:#0a6cff; --accent-ink:#fff; --ok:#30a14e; --warn:#d98a00; --bad:#e5484d;
+  --rx:#0a6cff; --tx:#a259ff; --radius:18px; --radius-s:12px;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --font:"Segoe UI Variable Text","Segoe UI",-apple-system,system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000; --surface:#1c1c1e; --surface-2:#242426; --ink:#f5f5f7; --ink-2:#a1a1a6; --ink-3:#6c6c70;
+  --line:rgba(255,255,255,.1); --accent:#2f8bff; --ok:#3fcf6b; --warn:#ffb340; --bad:#ff6b6f; --rx:#3c96ff; --tx:#b98cff;
+  --shadow:0 1px 2px rgba(0,0,0,.5);
+}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--font);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100%}
+/* боковое меню (широкое окно) / нижняя панель (узкое, как на телефоне) */
+nav{padding:20px 12px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line);background:var(--surface-2)}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px}
+.brand img{width:34px;height:34px;border-radius:9px}
+.brand b{font-size:18px;letter-spacing:-.01em}
+.tab{display:flex;align-items:center;gap:10px;border:0;background:transparent;padding:9px 12px;border-radius:10px;cursor:pointer;text-align:left;color:var(--ink-2);transition:background .2s var(--ease),color .2s}
+.tab svg{width:20px;height:20px;flex:none}
+.tab:hover{background:var(--line)}
+.tab[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.navfoot{margin-top:auto;padding:10px 12px;color:var(--ink-3);font-size:12px}
+main{padding:28px 32px 40px;max-width:980px;width:100%}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px;font-weight:650}
+.sub{color:var(--ink-2);margin:0 0 22px}
+.page{display:none;animation:in .35s var(--ease)}
+.page.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.card{background:var(--surface);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.span-12{grid-column:span 12}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-4{grid-column:span 4}
+.label{font-size:12px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:8px}
+/* главный блок */
+.hero{display:flex;align-items:center;gap:24px}
+.orb{width:120px;height:120px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;background:var(--surface-2);transition:background .5s var(--ease)}
+.orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--line);transition:border-color .5s}
+.orb.on{background:color-mix(in srgb,var(--ok) 14%,var(--surface))}
+.orb.on::before{border-color:color-mix(in srgb,var(--ok) 55%,transparent);animation:pulse 2.4s var(--ease) infinite}
+.orb.wait::before{border-color:color-mix(in srgb,var(--warn) 60%,transparent);animation:pulse 1.4s var(--ease) infinite}
+.orb img{width:58px;height:58px;border-radius:14px;transition:transform .5s var(--ease)}
+.orb.on img{transform:scale(1.06)}
+@keyframes pulse{0%{transform:scale(1);opacity:1}70%{transform:scale(1.12);opacity:0}100%{opacity:0}}
+.status{font-size:22px;font-weight:650;letter-spacing:-.01em}
+.status small{display:block;font-size:14px;font-weight:400;color:var(--ink-2);margin-top:2px}
+.btn-main{margin-top:14px;border:0;border-radius:14px;padding:13px 26px;font-size:16px;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer;min-width:220px;transition:transform .15s var(--ease),background .3s,opacity .2s}
+.btn-main:active{transform:scale(.97)}
+.btn-main.off{background:var(--bad)}
+.btn-main:disabled{opacity:.45;cursor:default}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:1em}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi b{display:block;font-size:22px;font-weight:650;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--ink-2)}
+canvas{width:100%;display:block}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--ink-2);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+/* каналы */
+.ch{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.ch:first-child{border-top:0}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--ink-3);box-shadow:0 0 0 4px color-mix(in srgb,var(--ink-3) 18%,transparent)}
+.dot.ok{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 20%,transparent)}
+.dot.bad{background:var(--bad);box-shadow:0 0 0 4px color-mix(in srgb,var(--bad) 18%,transparent)}
+.chname{font-weight:600;min-width:0;overflow-wrap:break-word}  /* длинный адрес (cla.example.com) переносится, а не выталкивает строку за экран */
+.chname small{display:block;font-weight:400;color:var(--ink-2);font-size:13px}
+.pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:2px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.pill.live{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.chright{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:13px;min-width:120px}
+.chright canvas{height:28px;width:120px;margin-top:4px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:11px;padding:3px;gap:2px;flex-wrap:wrap;border:1px solid var(--line)}
+.seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ink-2);transition:background .2s,color .2s}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 14px;cursor:pointer;transition:background .2s}
+.btn:hover{background:var(--surface-2)}
+.btn.danger{color:var(--bad)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row small{display:block;color:var(--ink-2);font-size:13px}
+.switch{position:relative;width:46px;height:28px;flex:none}
+.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer;position:absolute;z-index:1}
+.switch span{position:absolute;inset:0;border-radius:99px;background:var(--ink-3);transition:background .25s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .25s var(--ease)}
+.switch input:checked+span{background:var(--ok)}
+.switch input:checked+span::after{transform:translateX(18px)}
+pre{white-space:pre-wrap;font:12px/1.55 "Cascadia Mono",Consolas,monospace;color:var(--ink-2);max-height:60vh;overflow:auto;margin:0}
+.hint{color:var(--ink-2);font-size:13px}
+code{font-family:"Cascadia Mono",Consolas,monospace;font-size:12.5px;background:var(--surface-2);padding:1px 6px;border-radius:6px}
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:28px;text-align:center;color:var(--ink-2)}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}
+  nav{position:fixed;bottom:0;left:0;right:0;flex-direction:row;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);z-index:5;backdrop-filter:blur(20px);background:color-mix(in srgb,var(--surface-2) 85%,transparent)}
+  .brand,.navfoot{display:none}
+  .tab{flex-direction:column;gap:2px;font-size:11px;padding:6px 8px}
+  main{padding:18px 16px 96px}
+  .span-7,.span-5,.span-6,.span-4{grid-column:span 12}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .hero{flex-direction:column;text-align:center}
+}
+.fgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.fgrid label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.fgrid input,.inp{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:inherit;width:100%}
+textarea.inp{font:12px/1.4 "Cascadia Mono",Consolas,monospace;resize:vertical}
+.stp{display:flex;gap:10px;align-items:center;padding:7px 0}
+.stp i{width:18px;height:18px;border-radius:50%;flex:none;display:grid;place-items:center;font-style:normal;font-size:11px;color:#fff;background:var(--ok)}
+.stp.cur i{background:var(--accent);animation:pulse 1.4s infinite}
+@media (max-width:760px){.fgrid{grid-template-columns:1fr}}
+/* ================= премиальная тема (0.7) ================= */
+:root{--accent:#0a72ff;--accent-2:#3d93ff;--ok:#24a148;--ok-2:#3dd36f;--radius:22px;--radius-s:14px;
+  --shadow:0 1px 1px rgba(16,24,40,.04),0 4px 12px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.06);
+  --shadow-s:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.06);
+  --glass:rgba(255,255,255,.72);--bg-grad:radial-gradient(1200px 600px at 10% -10%,rgba(10,114,255,.10),transparent 60%),radial-gradient(900px 500px at 110% 0%,rgba(162,89,255,.08),transparent 55%)}
+@media (prefers-color-scheme:dark){:root{--accent:#2f8bff;--accent-2:#5aa5ff;--ok:#2fbf5c;--ok-2:#5ee08a;
+  --shadow:0 1px 1px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.45);--shadow-s:0 1px 2px rgba(0,0,0,.5);
+  --glass:rgba(28,28,30,.72);--bg-grad:radial-gradient(1200px 600px at 10% -10%,rgba(47,139,255,.16),transparent 60%),radial-gradient(900px 500px at 110% 0%,rgba(185,140,255,.10),transparent 55%)}}
+body{background:var(--bg-grad),var(--bg);background-attachment:fixed;font-size:15px}
+h1{font-size:32px;letter-spacing:-.025em;font-weight:700;line-height:1.1}
+.sub{font-size:15px;max-width:68ch}
+nav{background:var(--glass);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-right:1px solid var(--line)}
+.brand img{width:38px;height:38px;border-radius:10px;box-shadow:0 4px 12px rgba(10,114,255,.35)}
+.brand b{font-size:19px;letter-spacing:-.02em}
+.tab{padding:11px 12px;border-radius:12px;font-weight:500;font-size:14.5px;transition:background .18s var(--ease),color .18s,transform .1s}
+.tab:active{transform:scale(.98)}
+.tab[aria-selected=true]{background:var(--surface);box-shadow:var(--shadow-s);color:var(--ink)}
+.tab[aria-selected=true] svg{color:var(--accent)}
+.card{border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.label{font-size:11.5px;letter-spacing:.08em}
+/* кнопки в духе macOS (17.11): прямоугольные со скруглением 8 px,
+   одна высота, надпись в одну строку, без подпрыгивания при наведении; нажатие — мгновенное лёгкое сжатие */
+.btn-main{margin-top:0;min-width:0;height:40px;padding:0 22px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:-.005em;white-space:nowrap;
+  background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;border:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(0,0,0,.18),0 6px 16px color-mix(in srgb,var(--accent) 28%,transparent);
+  transition:transform .1s var(--ease),filter .15s,opacity .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-main:hover:not(:disabled){filter:brightness(1.07)}
+.btn-main:active:not(:disabled){transform:scale(.98);filter:brightness(.95);transition-duration:.05s}
+.btn-main:disabled{opacity:.5;box-shadow:none;filter:saturate(.4)}
+.btn{height:32px;padding:0 14px;border-radius:8px;font-weight:500;font-size:13.5px;line-height:1;white-space:nowrap;flex:none;
+  color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  box-shadow:0 1px 1px rgba(16,24,40,.06);transition:background .15s,transform .1s var(--ease);
+  display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{background:var(--surface-2)}
+.btn:active{transform:scale(.98);transition-duration:.05s}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.danger{color:var(--bad)}
+.btn.danger:hover{background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+@media (prefers-color-scheme:dark){.btn{background:color-mix(in srgb,var(--ink) 9%,transparent);border-color:color-mix(in srgb,var(--ink) 10%,transparent);box-shadow:none}
+  .btn:hover{background:color-mix(in srgb,var(--ink) 14%,transparent)}}
+.seg{padding:3px;border-radius:10px;background:color-mix(in srgb,var(--ink) 7%,transparent);border:0}
+.seg button{height:30px;padding:0 14px;border-radius:7px;font-weight:500;font-size:13.5px;white-space:nowrap}
+.seg button[aria-pressed=true]{box-shadow:0 1px 2px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.06)}
+/* ряд кнопок: по центру, обычная кнопка рядом с большой — той же высоты (17.11: «Скопировать / Готово» стояли криво) */
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.actions .btn{height:40px;padding:0 18px;font-size:14.5px;border-radius:10px}
+/* карточки с кнопкой внизу: в одном ряду кнопки на одном уровне при любой длине текста над ними */
+.card-act{display:flex;flex-direction:column}.card-act>.hint{margin-bottom:14px}.card-act>.btn-main:last-child,.card-act>.btn:last-child{margin-top:auto}
+.fgrid input,.inp{height:40px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);transition:border-color .15s,box-shadow .15s}
+textarea.inp{height:auto}
+.fgrid input:focus,.inp:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+.switch{width:52px;height:32px}
+.switch span::after{width:26px;height:26px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.switch input:checked+span::after{transform:translateX(20px)}
+.row{padding:14px 0}
+.row>div:first-child{min-width:0;flex:1}
+/* главная кнопка питания */
+.hero-card{padding:34px 24px 28px;background:radial-gradient(600px 260px at 50% 0%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 70%),var(--surface)}
+.hero2{display:flex;flex-direction:column;align-items:center;text-align:center}
+.power-wrap{position:relative;width:176px;height:176px;display:grid;place-items:center;margin-bottom:14px}
+.ring{position:absolute;inset:0;border-radius:50%;border:2px solid transparent;pointer-events:none}
+.power{position:relative;width:148px;height:148px;border-radius:50%;border:0;cursor:pointer;color:#fff;
+  background:radial-gradient(circle at 50% 28%,rgba(255,255,255,.45),transparent 42%),linear-gradient(180deg,var(--accent-2),var(--accent));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -6px 16px rgba(0,30,90,.25),0 14px 34px color-mix(in srgb,var(--accent) 45%,transparent),0 3px 8px rgba(0,0,0,.15);
+  transition:transform .14s var(--ease),box-shadow .3s,filter .3s,background .4s}
+.power svg{width:58px;height:58px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.power:hover:not(:disabled){transform:translateY(-2px) scale(1.02)}
+.power:active:not(:disabled){transform:scale(.95);transition-duration:.06s}
+.power:disabled{cursor:default;filter:saturate(.25) brightness(.95);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 8px 20px rgba(0,0,0,.12)}
+.power-wrap.on .power{background:radial-gradient(circle at 50% 28%,rgba(255,255,255,.45),transparent 42%),linear-gradient(180deg,var(--ok-2),var(--ok));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -6px 16px rgba(0,60,20,.25),0 14px 40px color-mix(in srgb,var(--ok) 55%,transparent),0 3px 8px rgba(0,0,0,.15)}
+.power-wrap.on .ring{border-color:color-mix(in srgb,var(--ok) 55%,transparent);animation:ripple 2.6s var(--ease) infinite}
+.power-wrap.on .r2{animation-delay:1.3s}
+.power-wrap.wait .ring{border-color:color-mix(in srgb,var(--warn) 55%,transparent);animation:ripple 1.8s var(--ease) infinite}
+.power-wrap.wait .r2{animation-delay:.9s}
+@keyframes ripple{0%{transform:scale(.84);opacity:.9}100%{transform:scale(1.18);opacity:0}}
+.golabel{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.hero2 .status{font-size:15px;font-weight:500;color:var(--ink-2);margin-top:4px}
+.hero2 .status small{display:inline;font-size:15px;font-weight:400}
+.hero2 .status small::before{content:" · "}
+/* плитки показателей */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile b{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile span{font-size:12.5px;color:var(--ink-2)}
+.ti{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;margin-bottom:8px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.ti svg{width:18px;height:18px}
+.ch{padding:16px 0}
+.dot{width:11px;height:11px}
+.pill{padding:3px 9px}
+@media (max-width:760px){nav{overflow-x:auto;justify-content:flex-start;scrollbar-width:none}nav::-webkit-scrollbar{display:none}.tab{flex:none;min-width:72px}
+  .tiles{grid-template-columns:repeat(2,1fr)}.power-wrap{width:156px;height:156px}.power{width:132px;height:132px}h1{font-size:28px}}
+@media (prefers-reduced-transparency:reduce){nav{background:var(--surface-2);backdrop-filter:none}}
+/* Android: лист снизу, без того, чего нет на телефоне */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:20;animation:in .25s var(--ease)}
+.sheet{background:var(--surface);border-radius:24px 24px 0 0;padding:22px 22px 28px;width:100%;max-width:560px;box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+.sheet h2{margin:0 0 6px;font-size:21px;letter-spacing:-.02em}
+.sheet a{color:var(--accent-2);text-decoration:none;font-weight:500}.sheet a:hover{text-decoration:underline}
+@media (min-width:761px){.sheet-bg{align-items:center}.sheet{border-radius:24px}}
+body:not(.is-mac) .mac-only{display:none!important}
+.is-android:not(.is-mac) #auto,.is-android #updcheck{display:none}
+.is-android:not(.is-mac) .row:has(#auto),.is-android .row:has(#updcheck){display:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* узкий экран (телефон, планшет стоя): правила премиальной темы выше перекрывали мобильные — нижнее меню и
+   переключатель каналов вылезали за правый край (планшет; при крупном шрифте Android — тем более) */
+@media (max-width:760px){
+  nav{gap:2px;overflow:hidden}
+  .tab{flex:1 1 0;min-width:0;flex-direction:column;gap:3px;font-size:10px;padding:6px 1px;border-radius:10px;text-align:center;white-space:nowrap;overflow:hidden}
+  .tab svg{flex:none}
+  .tab .tl{display:none}.tab .ts{display:inline}  /* короткие подписи длинных пунктов */
+  /* строка канала: название во всю ширину, задержка и график — строкой ниже (иначе название сжималось и рвалось) */
+  .ch{grid-template-columns:auto minmax(0,1fr);row-gap:6px}
+  .ch .chright{grid-column:2;display:flex;align-items:center;gap:10px;text-align:left}
+  .ch .chright canvas{flex:1;min-width:0;max-width:220px}
+  .pill{white-space:nowrap}
+  .seg{display:flex;width:100%;max-width:100%}
+  .seg button{flex:1 1 auto;min-width:0;white-space:normal;height:auto;min-height:30px;padding:6px 10px;line-height:1.2}
+}
+.ts{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav role="tablist" aria-label="Разделы">
+    <div class="brand"><img src="/icon.svg" alt=""><b>Мост</b></div>
+    <button class="tab" role="tab" data-p="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Обзор</button>
+    <button class="tab" role="tab" data-p="channels" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Каналы</button>
+    <button class="tab" role="tab" data-p="proxy" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span class="tl">Через канал</span><span class="ts">Выход</span></button>
+    <button class="tab" role="tab" data-p="exchange" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Обмен</button>
+    <button class="tab" role="tab" data-p="devices" aria-selected="false" id="tab-devices" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="13" height="10" rx="2"/><rect x="15" y="9" width="6" height="11" rx="1.5"/><path d="M7 18h6"/></svg>Устройства</button>
+    <button class="tab" role="tab" data-p="server" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg><span class="tl">Новый сервер</span><span class="ts">Сервер</span></button>
+    <button class="tab" role="tab" data-p="log" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 4h12v16H6z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Журнал</button>
+    <button class="tab" role="tab" data-p="settings" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Настройки</button>
+    <div class="navfoot" id="navfoot"></div>
+  </nav>
+
+  <main>
+    <!-- нет профиля -->
+    <section class="page" id="p-setup">
+      <h1>Добро пожаловать</h1>
+      <p class="sub">Загрузите файл профиля сервера или приглашение — он хранится зашифрованным только на этом устройстве.</p>
+      <div class="card"><div class="drop"><p>Файл <code>profile-…json</code> или приглашение</p><label class="btn-main" style="cursor:pointer;margin-top:14px">Выбрать файл<input type="file" id="pfile" accept=".json,application/json,*/*" hidden></label><div class="err" id="perr"></div></div></div>
+      <p class="sub" style="margin-top:16px">Или подготовьте свой сервер с нуля: <button class="btn" id="gosetup">Новый сервер</button></p>
+    </section>
+
+    <section class="page" id="p-home">
+      <h1 id="srvname">Сервер</h1>
+      <p class="sub" id="srvsub"></p>
+      <div class="card" id="rdpapp" hidden style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>Для рабочего стола нужно приложение «Windows App»</b><small class="hint" style="display:block">Бесплатный клиент RDP от Microsoft из Google Play — откроется сразу нужная страница</small></div><button class="btn-main" id="rdpinstall" style="margin:0;min-width:0">Установить</button></div>
+      <div class="card" id="updbanner" hidden style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b id="updtitle">Доступно обновление</b><small class="hint" style="display:block" id="updnotes"></small></div><button class="btn-main" id="updapply2" style="margin:0;min-width:0">Обновить</button></div>
+      <div class="grid">
+        <div class="card span-12 hero-card">
+          <div class="hero2">
+            <div class="power-wrap" id="orb">
+              <span class="ring r1"></span><span class="ring r2"></span>
+              <button class="power" id="go" disabled aria-label="Подключиться">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
+              </button>
+            </div>
+            <div class="golabel" id="golabel">Подключиться</div>
+            <div class="status" id="status">Проверяю каналы…<small></small></div>
+            <div class="err" id="gerr"></div>
+          </div>
+        </div>
+        <div class="span-12 tiles">
+          <div class="tile"><i class="ti" style="--c:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg></i><b id="k-ch">—</b><span>канал</span></div>
+          <div class="tile"><i class="ti" style="--c:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3-3M12 3v2"/></svg></i><b id="k-ms">—</b><span>задержка</span></div>
+          <div class="tile"><i class="ti" style="--c:var(--rx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v16M6 14l6 6 6-6"/></svg></i><b id="k-rx">0</b><span>приём</span></div>
+          <div class="tile"><i class="ti" style="--c:var(--tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V4M6 10l6-6 6 6"/></svg></i><b id="k-tx">0</b><span>отдача</span></div>
+        </div>
+        <div class="card span-12">
+          <div class="label">Скорость, последние 2 минуты</div>
+          <canvas id="speed" height="180"></canvas>
+          <div class="legend"><span><i style="background:var(--rx)"></i>приём</span><span><i style="background:var(--tx)"></i>отдача</span><span id="totals"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="p-channels">
+      <h1>Каналы</h1>
+      <p class="sub">Каждый канал раз в 30 секунд проверяется до рабочего стола сервера. При обрыве соединение уходит в следующий живой.</p>
+      <div class="grid">
+        <div class="card span-12"><div class="label">Выбор канала</div><div class="seg" id="modes"></div></div>
+        <div class="card span-12"><div id="chs"></div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center"><button class="btn" id="probe">Проверить сейчас</button><span class="hint" id="checked"></span></div></div>
+        <div class="card span-12"><div class="label">Задержка по каналам</div><canvas id="lat" height="160"></canvas><div class="legend" id="latlegend"></div></div>
+      </div>
+    </section>
+
+    <section class="page" id="p-proxy">
+      <h1>Через наш канал</h1>
+      <p class="sub">Chrome и Claude ходят в интернет через сервер в Германии — по тому же каналу, что и рабочий стол. Остальные программы и системный прокси (INCY) не затрагиваются.</p>
+      <div class="grid">
+        <div class="card span-12">
+          <div class="row"><div><b>Через наш канал</b><small id="pxstate">выключено</small></div>
+            <label class="switch"><input type="checkbox" id="px" aria-label="Через наш канал"><span></span></label></div>
+          <div class="row"><div><b>Адрес выхода</b><small id="pxip">проверьте, с каким адресом вас видят сайты</small></div><button class="btn" id="pxcheck">Проверить</button></div>
+        </div>
+        <div class="card span-6 card-act"><div class="label">Chrome</div><p class="hint">Откроется отдельное окно Chrome со своим профилем, весь его трафик — через канал.</p><button class="btn-main" id="lchrome" style="width:100%">Открыть Chrome через канал</button></div>
+        <div class="card span-6 card-act"><div class="label">Claude</div><p class="hint">Перед запуском закройте Claude полностью, включая значок у часов.</p><button class="btn-main" id="lclaude" style="width:100%">Открыть Claude через канал</button></div>
+        <div class="card span-12"><div class="label">Для других программ</div>
+          <div class="row"><div><b>SOCKS5</b><small><code>127.0.0.1:10870</code></small></div></div>
+          <div class="row"><div><b>HTTP</b><small><code>127.0.0.1:10871</code></small></div></div>
+          <div class="row"><div><b>Claude Code (терминал PowerShell)</b><small><code>$env:HTTPS_PROXY="http://127.0.0.1:10871"; claude</code></small></div></div>
+          <div class="err" id="pxerr"></div></div>
+      </div>
+    </section>
+
+    <section class="page" id="p-exchange">
+      <h1>Папка обмена</h1>
+      <p class="sub">Файлы из этой папки видны на сервере — на рабочем столе папка «Обмен», и наоборот.</p>
+      <div class="card">
+        <div class="row"><div><b>На этом компьютере</b><small id="exdir"></small></div><button class="btn" id="ex">Открыть</button></div>
+        <div class="row"><div><b>На сервере</b><small>Рабочий стол → «Обмен» (появляется, пока открыт рабочий стол через «Мост»)</small></div></div>
+        <div class="row mac-only" style="align-items:flex-start"><div><b>Настройка на маке — один раз</b><ol class="hint" style="margin:6px 0 0;padding-left:18px"><li>Нажмите «Открыть Windows App».</li><li>В строке меню вверху: <b>Windows App → Настройки…</b> (⌘ ,) → вкладка <b>Основные</b>.</li><li>В строке про перенаправление папок (<i>If folder redirection is enabled for RDP files…</i>) → <b>Выбрать папку…</b> → <b>Obmen</b> в вашей домашней папке.</li><li>Закройте окно рабочего стола и снова нажмите «Подключиться»: папка передаётся только при новом подключении.</li><li>Если macOS спросит, дать ли Windows App доступ к папке, — разрешите.</li></ol><small style="display:block;margin-top:8px">На сервере: Рабочий стол → «Обмен» → «Obmen». Первое открытие может занять до минуты.</small></div><button class="btn" id="openrdpapp">Открыть Windows App</button></div>
+      </div>
+    </section>
+
+    <section class="page" id="p-devices">
+      <h1>Устройства</h1>
+      <p class="sub">Компьютеры и телефоны с доступом к серверу. У каждого свой ключ AWG — потерянное устройство можно отключить, не трогая остальные.</p>
+      <div class="grid">
+        <div class="card span-12"><div class="label">Пригласить новое устройство</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <input id="invname" placeholder="Название, например «Ноутбук» или «Телефон»" maxlength="40" style="flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:inherit">
+            <button class="btn-main" id="invbtn" style="margin:0;min-width:0">Создать приглашение</button></div>
+          <p class="hint" style="margin:10px 0 0">Скачается файл приглашения. Перенесите его на новое устройство и откройте в «Мосте» (Настройки → Загрузить). Действует сутки, один раз. Закрытый ключ создастся на самом устройстве.</p>
+          <div class="err" id="inverr"></div></div>
+        <div class="card span-12"><div id="devlist" class="hint">Загружаю…</div>
+          <div style="margin-top:12px"><button class="btn" id="devrefresh">Обновить</button></div></div>
+      </div>
+    </section>
+
+    <section class="page" id="p-server">
+      <h1>Новый сервер</h1>
+      <p class="sub">Мастер сам подготовит чистый сервер Ubuntu 24.04 или 26.04: защита, AmneziaWG, Xray, свой DNS, управление устройствами и, по желанию, рабочий стол с RDP. В конце — готовый профиль.</p>
+      <div class="grid" id="sv-form">
+        <div class="card span-12">
+          <div class="label">1. Доступ к серверу</div>
+          <div class="fgrid">
+            <label>Адрес (IP)<input id="sv-host" placeholder="203.0.113.10"></label>
+            <label>Порт SSH<input id="sv-port" value="22" inputmode="numeric"></label>
+            <label>Пользователь<input id="sv-user" value="root"></label>
+            <label>Название в программе<input id="sv-name" placeholder="например, «Германия»"></label>
+          </div>
+          <div class="seg" style="margin:12px 0" id="sv-auth"><button aria-pressed="true" data-a="pw">Пароль</button><button aria-pressed="false" data-a="key">Ключ</button></div>
+          <div id="sv-pwbox"><input id="sv-pw" type="password" placeholder="Пароль пользователя" class="inp"></div>
+          <div id="sv-keybox" hidden><textarea id="sv-key" rows="5" class="inp" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- … (закрытый ключ без пароля)"></textarea></div>
+          <div class="row" style="margin-top:8px"><div><b>Рабочий стол KDE + RDP</b><small>Удалённый рабочий стол с автовходом; до +30 минут к установке, нужно от 4 ГБ памяти</small></div>
+            <label class="switch"><input type="checkbox" id="sv-desk" checked aria-label="Рабочий стол"><span></span></label></div>
+          <div class="row" id="sv-chromerow"><div><b>Google Chrome на сервере</b><small>Из официального репозитория Google, браузер по умолчанию на рабочем столе</small></div>
+            <label class="switch"><input type="checkbox" id="sv-chrome" checked aria-label="Chrome"><span></span></label></div>
+          <div class="row" id="sv-clauderow"><div><b>Claude на сервере</b><small>Официальное приложение Anthropic для Linux (бета) из их репозитория: чат и Claude Code на рабочем столе сервера, обновляется вместе с системой. Вход — вашей учётной записью Claude.</small></div>
+            <label class="switch"><input type="checkbox" id="sv-claude" checked aria-label="Claude"><span></span></label></div>
+          <div class="row"><div><b>Порт AmneziaWG (UDP)</b><small>443 лучше проходит защиту хостеров</small></div><input id="sv-awg" value="443" class="inp" style="width:90px" inputmode="numeric"></div>
+          <div class="row"><div style="flex:1"><b>Домен для маскировки (рекомендуется)</b><small>Свой домен или поддомен с записью A на IP сервера, в Cloudflare — <b>серое облачко</b> (только DNS). Канал Reality будет выглядеть как обычный сайт на этом домене: мастер поставит на сервер страницу-заглушку с настоящим сертификатом. Под своим доменом Reality проходит фильтры провайдеров заметно лучше, чем под чужим сайтом. Без домена — маскировка под www.samsung.com.</small>
+            <input id="sv-rdomain" class="inp" placeholder="site.example.com" style="margin-top:6px"></div></div>
+          <div class="row"><div style="flex:1"><b>Домен для CDN (по желанию)</b><small>Другой домен в Cloudflare с записью A на IP сервера, <b>оранжевое облачко</b> — даст канал «Xray через CDN», он проходит, когда прямой путь до сервера режется. На время подготовки облачко серое, после — оранжевое.</small>
+            <input id="sv-domain" class="inp" placeholder="vpn.example.com" style="margin-top:6px"></div></div>
+          <button class="btn-main" id="sv-check" style="margin-top:14px">Проверить сервер</button><div class="err" id="sv-err"></div>
+        </div>
+      </div>
+      <div class="grid" id="sv-inspect" hidden>
+        <div class="card span-12"><div class="label">2. Обследование</div><div id="sv-info"></div>
+          <div class="row"><div><b>Отпечаток ключа сервера</b><small><code id="sv-fp"></code><br>Сверьте с тем, что показывает хостер (или выполните на сервере <code>ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub</code>). Это защита от подмены сервера.</small></div>
+            <label class="switch"><input type="checkbox" id="sv-fpok" aria-label="Отпечаток верный"><span></span></label></div>
+          <div class="actions" style="margin-top:10px"><button class="btn-main" id="sv-start" disabled>Начать подготовку</button><button class="btn" id="sv-back">Назад</button></div>
+          <div class="err" id="sv-err2"></div></div>
+      </div>
+      <div class="grid" id="sv-run" hidden>
+        <div class="card span-12"><div class="label">3. Подготовка <span id="sv-time" class="hint"></span></div><div id="sv-steps"></div><div class="err" id="sv-err3"></div>
+          <div id="sv-retry" hidden style="display:flex;gap:10px;margin-top:8px"><button class="btn" id="sv-reatt">Продолжить следить</button><button class="btn" id="sv-again">Начать заново (безопасно)</button></div>
+          <div id="sv-done" hidden style="margin-top:14px"><div class="status" style="font-size:18px">Сервер готов</div>
+            <div class="actions" style="margin-top:10px"><button class="btn-main" id="sv-use">Переключиться на этот сервер</button><button class="btn" id="sv-dl">Скачать профиль</button><button class="btn" id="sv-close">Закрыть</button></div>
+            <p class="hint">Профиль содержит пароль и ключи — храните его как пароль.</p>
+            <div id="sv-cdnhint" hidden class="card" style="margin-top:10px;background:var(--surface-2)"><b>Осталось в Cloudflare</b>
+              <ol class="hint" style="margin:6px 0 0;padding-left:18px"><li>DNS → запись домена → облачко <b>оранжевое</b> (Proxied).</li><li>SSL/TLS → режим <b>Full (strict)</b>.</li><li>Network → WebSockets — включено.</li><li>Правила «Always Use HTTPS» для этого домена не включайте — иначе не продлится сертификат.</li></ol></div></div></div>
+        <div class="card span-12"><details><summary class="hint">Подробный журнал установки</summary><pre id="sv-log"></pre></details></div>
+      </div>
+    </section>
+
+    <section class="page" id="p-log">
+      <h1>Журнал</h1>
+      <p class="sub">Последние события программы.</p>
+      <div class="card"><pre id="logtext">…</pre></div>
+    </section>
+
+    <section class="page" id="p-settings">
+      <h1>Настройки</h1>
+      <p class="sub" id="verline"></p>
+      <div class="card" style="margin-bottom:16px"><div class="label">Серверы</div><div id="srvlist" class="hint">…</div></div>
+      <div class="card">
+        <div class="row"><div><b id="autolbl">Запускать вместе с Windows</b><small>Без окна, каналы прогреваются заранее — подключение сразу быстрое</small></div>
+          <label class="switch"><input type="checkbox" id="auto" aria-label="Автозапуск"><span></span></label></div>
+        <div class="row"><div><b>Обновления</b><small id="updline">проверяю…</small></div><div class="actions"><button class="btn" id="updcheck">Проверить</button><button class="btn-main" id="updapply" hidden>Обновить</button></div></div>
+        <div class="row"><div><b>Добавить сервер</b><small>Файл профиля или приглашение — сервер добавится в список ниже и станет активным</small></div><label class="btn" style="cursor:pointer">Загрузить файл<input type="file" id="pfile2" accept=".json" hidden></label></div>
+        <div class="row"><div><b>Выключить программу</b><small>Рабочий стол на сервере останется открытым</small></div><button class="btn danger" id="quit">Выключить</button></div>
+      </div>
+      <div class="err" id="perr2"></div>
+    </section>
+  </main>
+</div>
+<script>
+const T="__TOKEN__", $=id=>document.getElementById(id);
+async function api(p,body){
+  const r=await fetch(p,{method:body===undefined?"GET":"POST",headers:{"X-Token":T,"Content-Type":"application/json"},
+    body:body===undefined?undefined:(typeof body==="string"?body:JSON.stringify(body))});
+  const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||("ошибка "+r.status)); return j;
+}
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtRate=b=>b<1024?Math.round(b)+" Б/с":b<1048576?(b/1024).toFixed(b<10240?1:0)+" КБ/с":(b/1048576).toFixed(1)+" МБ/с";
+const fmtBytes=b=>b<1048576?(b/1024).toFixed(0)+" КБ":b<1073741824?(b/1048576).toFixed(1)+" МБ":(b/1073741824).toFixed(2)+" ГБ";
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const CHCOL={awg:"#30a14e",cdn:"#0a6cff",xray:"#a259ff",ssh:"#d98a00"};
+let page="home", S=null;
+
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.p));
+function show(p){page=p; if(p==="devices") loadDevices(); if(p==="settings" && typeof loadServers==="function") loadServers();document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.p===p));
+  document.querySelectorAll(".page").forEach(x=>x.classList.toggle("on",x.id==="p-"+p)); if(p==="log") loadLog(); drawAll();}
+
+/* график: плавные линии с заливкой, по ширине холста, с учётом плотности пикселей */
+function chart(cv,series,opts={}){
+  const dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.height/ (cv._dpr||1);
+  if(!w) return; cv._dpr=dpr; cv.width=w*dpr; cv.height=h*dpr; const g=cv.getContext("2d"); g.scale(dpr,dpr); g.clearRect(0,0,w,h);
+  const all=series.flatMap(s=>s.data); let max=Math.max(opts.min||1,...all); max*=1.15;
+  g.strokeStyle=css("--line"); g.lineWidth=1; g.fillStyle=css("--ink-3"); g.font="11px "+css("--font");
+  for(let i=1;i<=3;i++){const y=h-h*i/4; g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); g.fillText(opts.fmt?opts.fmt(max*i/4):"",4,y-4);}
+  const n=opts.len||120;
+  for(const s of series){ if(s.data.length<2) continue;
+    const pts=s.data.map((v,i)=>[w-(s.data.length-1-i)*w/(n-1), h-(v/max)*(h-8)-2]);
+    g.beginPath(); g.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],mx=(x0+x1)/2; g.bezierCurveTo(mx,y0,mx,y1,x1,y1);}
+    g.strokeStyle=s.color; g.lineWidth=2; g.stroke();
+    if(s.fill){ g.lineTo(pts[pts.length-1][0],h); g.lineTo(pts[0][0],h); g.closePath();
+      const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,s.color+"55"); gr.addColorStop(1,s.color+"00"); g.fillStyle=gr; g.fill(); }
+  }
+}
+let ST=null;
+function drawAll(){
+  if(!ST) return;
+  if(page==="home") chart($("speed"),[{data:ST.rx,color:css("--rx"),fill:true},{data:ST.tx,color:css("--tx"),fill:true}],{fmt:fmtRate,min:2048});
+  if(page==="channels"){
+    const ids=Object.keys(ST.latency||{});
+    chart($("lat"),ids.map(id=>({data:ST.latency[id],color:CHCOL[id]||"#888"})),{fmt:v=>Math.round(v)+" мс",min:200,len:40});
+    $("latlegend").innerHTML=ids.map(id=>`<span><i style="background:${CHCOL[id]||"#888"}"></i>${esc(id)}</span>`).join("");
+    document.querySelectorAll("canvas[data-spark]").forEach(cv=>{const d=(ST.latency||{})[cv.dataset.spark]||[]; chart(cv,[{data:d,color:CHCOL[cv.dataset.spark]||"#888",fill:true}],{min:200,len:40});});
+  }
+  const rx=ST.rx.at(-1)||0, tx=ST.tx.at(-1)||0; $("k-rx").textContent=fmtRate(rx); $("k-tx").textContent=fmtRate(tx);
+  $("totals").textContent="всего: ↓ "+fmtBytes(ST.total_rx)+" · ↑ "+fmtBytes(ST.total_tx);
+}
+const NAMES={awg:"AmneziaWG",cdn:"Xray через CDN",xray:"Xray Reality",ssh:"SSH"};
+function render(){
+  if(!S) return;
+  $("navfoot").textContent="версия "+S.version; applyPlatform();
+  if(!S.profile){ if(page!=="server") document.querySelectorAll(".page").forEach(x=>x.classList.toggle("on",x.id==="p-setup")); return; }
+  if(!document.querySelector(".page.on")||$("p-setup").classList.contains("on")) show(page);
+  const RANK={awg:0,cdn:1,xray:2,ssh:3}; // как в программе: надёжность важнее задержки
+  const chs=S.channels||[], live=chs.filter(c=>c.ok).sort((a,b)=>(RANK[a.id]-RANK[b.id])||(a.ms-b.ms));
+  const active=chs.find(c=>c.active), cur=active||(S.mode!=="auto"?chs.find(c=>c.id===S.mode&&c.ok):live[0]);
+  $("srvname").textContent=S.profile.name||"Сервер"; $("srvsub").textContent=S.profile.server+" · пользователь "+S.profile.user;
+  const orb=$("orb"), go=$("go"), st=$("status"), gl=$("golabel");
+  orb.className="power-wrap"+(S.connected?" on":(live.length?" ready":" wait"));
+  const setGo=(label,dis)=>{ gl.textContent=label; go.setAttribute("aria-label",label); go.disabled=dis; };
+  if(!S.profile.rdp){ st.innerHTML="Рабочего стола на этом сервере нет<small>доступно «Через наш канал»</small>"; setGo("Подключиться",true); }
+  else if(S.connected){ st.innerHTML="Подключено<small>через "+esc(NAMES[(active||cur||{}).id]||"канал")+"</small>"; setGo("Отключиться",false); }
+  else if(live.length){ st.innerHTML="Готово к подключению<small>"+live.length+" из "+chs.length+" каналов работают</small>"; setGo("Подключиться",false); }
+  else { st.innerHTML="Проверяю каналы…<small>первое подключение после запуска может занять до минуты</small>"; setGo("Подключиться",true); }
+  $("k-ch").textContent=cur?(NAMES[cur.id]||cur.id):"—"; $("k-ms").textContent=cur&&cur.ok?Math.round(cur.ms)+" мс":"—";
+  // каналы
+  $("chs").innerHTML=chs.map(c=>`<div class="ch"><span class="dot ${c.ok?"ok":(c.checked?"bad":"")}"></span>
+    <div class="chname">${esc(c.title)}${c.active?'<span class="pill live">идёт RDP</span>':""}${(S.mode==="auto"&&live[0]&&live[0].id===c.id)?'<span class="pill">лучший</span>':""}
+      <small>${c.ok?(c.penalty?"работает, но недавно оборвался — пока в резерве":"работает"):esc(c.err||"")}${c.drops?(" · обрывов: "+c.drops):""}</small></div>
+    <div class="chright">${c.ok?Math.round(c.ms)+" мс":"—"}<canvas data-spark="${c.id}" height="28"></canvas></div></div>`).join("");
+  $("checked").textContent=chs[0]&&chs[0].checked?"проверено в "+chs[0].checked:"проверяю…";
+  const opts=[["auto","Авто"]].concat(chs.map(c=>[c.id,NAMES[c.id]||c.id]));
+  $("modes").innerHTML=opts.map(([v,t])=>`<button aria-pressed="${v===S.mode}" data-m="${v}">${esc(t)}</button>`).join("");
+  $("modes").querySelectorAll("button").forEach(b=>b.onclick=()=>api("/api/mode",{Mode:b.dataset.m}).then(refresh));
+  $("exdir").textContent=S.exchange; $("auto").checked=!!S.autostart;
+  $("verline").textContent="«Мост» "+S.version+" · работает "+Math.floor(S.uptime/60)+" мин";
+  if(page==="settings" && !window.srvLoaded){ window.srvLoaded=1; loadServers(); }
+  renderProxy(); applyPlatform();
+  $("tab-devices").hidden=!S.profile.admin;
+  drawAll();
+}
+function renderProxy(){
+  const p=S.proxy||{}; $("px").checked=!!p.on;
+  $("pxstate").textContent=p.on?("включено · соединений: "+p.conns+(p.via?(" · последнее через "+(NAMES[p.via]||p.via)):"")):"выключено";
+  $("lchrome").disabled=!p.on||!p.chrome; $("lclaude").disabled=!p.on||!p.claude;
+  if(!p.chrome) $("lchrome").textContent="Chrome не найден"; if(!p.claude) $("lclaude").textContent="Claude не найден";
+}
+const ago=s=>s<90?"только что":s<3600?Math.round(s/60)+" мин назад":s<86400?Math.round(s/3600)+" ч назад":Math.round(s/86400)+" дн назад";
+async function loadDevices(){
+  try{ const j=await api("/api/devices"); const now=j.now;
+    $("devlist").innerHTML=(j.devices||[]).map(d=>{ const on=d.handshake&&now-d.handshake<180;
+      return `<div class="ch"><span class="dot ${on?"ok":(d.handshake?"":"")}"></span>
+      <div class="chname">${esc(d.name||"без имени")}${d.fixed?'<span class="pill">служебное</span>':""}<small>${esc(d.ip)} · ${d.handshake?("на связи "+ago(now-d.handshake)):"ещё не подключалось"}${d.rx?(" · ↓ "+fmtBytes(d.tx)+" ↑ "+fmtBytes(d.rx)):""}</small></div>
+      <div class="chright">${d.fixed?"":`<button class="btn danger" data-del="${esc(d.pub)}" data-name="${esc(d.name)}">Удалить</button>`}</div></div>`}).join("")
+      +(j.invites||[]).map(v=>{ const until=new Date(v.expires); return `<div class="ch"><span class="dot"></span>
+      <div class="chname">${esc(v.name)}<span class="pill">приглашение</span><small>ждёт подключения · действует до ${until.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}</small></div>
+      <div class="chright"><button class="btn" data-inv="${esc(v.id)}" data-name="${esc(v.name)}">Отменить</button></div></div>`}).join("")
+      || "Устройств нет";
+    $("devlist").querySelectorAll("[data-inv]").forEach(b=>b.onclick=async()=>{ if(!confirm("Отменить приглашение для «"+b.dataset.name+"»? Файл приглашения перестанет действовать.")) return;
+      try{ await api("/api/invites/cancel",{ID:b.dataset.inv}); loadDevices(); }catch(e){ alert(e.message); } });
+    $("devlist").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm("Удалить устройство «"+b.dataset.name+"»? Оно потеряет доступ к серверу по AWG.")) return;
+      try{ await api("/api/devices/delete",{Pub:b.dataset.del}); loadDevices(); }catch(e){ alert(e.message); } });
+  }catch(e){ $("devlist").textContent=e.message; }
+}
+let lost=0; // окно от прежнего запуска: программа перезапущена (новый ключ) или выключена — закрыть окно само
+async function refresh(){ try{S=await api("/api/state"); lost=0; render();}catch(e){ if(++lost>=4){ document.body.innerHTML="<main style='padding:40px'><h1>«Мост» перезапущен</h1><p class='sub'>Это окно от прежнего запуска и закроется само. Новое открывается щелчком по значку у часов.</p></main>"; setTimeout(()=>window.close(),2000); } } }
+async function refreshStats(){ try{ST=await api("/api/stats"); drawAll();}catch(e){} }
+async function loadLog(){ try{const j=await api("/api/log"); $("logtext").textContent=j.lines.slice().reverse().join("\n");}catch(e){} }
+async function importFile(input,errEl){ errEl.textContent=""; const f=input.files[0]; if(!f) return;
+  try{await api("/api/import",await f.text()); input.value=""; await refresh(); show("home");}catch(e){errEl.textContent=e.message;} }
+$("pfile").onchange=()=>importFile($("pfile"),$("perr")); $("pfile2").onchange=()=>importFile($("pfile2"),$("perr2"));
+$("go").onclick=async()=>{ $("gerr").textContent=""; const g=$("go"); g.disabled=true;
+  try{ const r=await api(S&&S.connected?"/api/disconnect":"/api/connect",{}); if(r&&r.rdp) rdpSheet(r.rdp); }
+  catch(e){ $("gerr").textContent=e.message; if(/Windows App/.test(e.message)&&window.MostAndroid&&MostAndroid.installRdp) MostAndroid.installRdp(); } setTimeout(refresh,800); };
+$("rdpinstall").onclick=()=>{ if(window.MostAndroid&&MostAndroid.installRdp) MostAndroid.installRdp(); };
+// Android: рабочий стол открывается в Microsoft «Windows App»; пароль один раз вставить и сохранить в нём
+function rdpSheet(pw){ if(localStorage.getItem("rdpSaved")==="1") return;
+  const d=document.createElement("div"); d.className="sheet-bg";
+  d.innerHTML='<div class="sheet"><h2>Первое подключение</h2><p class="hint">Рабочий стол открывается в приложении Microsoft «Windows App». Если оно спросит пароль — вставьте его и отметьте «Сохранить»: больше вводить не придётся.</p>'
+   +'<div class="actions" style="margin-top:14px"><button class="btn-main" id="rcopy">Скопировать пароль</button><button class="btn" id="rdone">Готово</button></div>'
+   +'<p class="hint" style="margin-top:12px">Нет приложения? <a href="#" id="rinst">Установить «Windows App» из '+(S&&S.platform==="darwin"?"App Store":"Google Play")+'</a></p></div>';
+  document.body.appendChild(d);
+  d.querySelector("#rcopy").onclick=()=>{ if(window.MostAndroid) MostAndroid.copy(pw); else navigator.clipboard&&navigator.clipboard.writeText(pw); };
+  d.querySelector("#rinst").onclick=e=>{ e.preventDefault(); if(window.MostAndroid&&MostAndroid.installRdp) MostAndroid.installRdp(); };
+  d.querySelector("#rdone").onclick=()=>{ try{localStorage.setItem("rdpSaved","1")}catch(e){} d.remove(); }; }
+function applyPlatform(){ const mac=S&&S.platform==="darwin", and=S&&(S.platform==="android"||mac); // мак — как Android: свой RDP-клиент, без Chrome/Claude и папки обмена
+  document.body.classList.toggle("is-android",and); document.body.classList.toggle("is-mac",!!mac); if(mac&&$("autolbl")) $("autolbl").textContent="Запускать при входе в macOS";
+  const need=and&&window.MostAndroid&&MostAndroid.rdpInstalled&&!MostAndroid.rdpInstalled()&&S.profile&&S.profile.rdp;
+  if($("rdpapp")){ $("rdpapp").hidden=!need; const sm=$("rdpapp").querySelector("small"); if(sm) sm.textContent="Бесплатный клиент RDP от Microsoft из "+(mac?"App Store":"Google Play")+" — откроется сразу нужная страница"; }
+  document.querySelectorAll('[data-p=proxy]').forEach(t=>t.hidden=and); document.querySelectorAll('[data-p=exchange]').forEach(t=>t.hidden=and&&!mac); }
+$("probe").onclick=async()=>{ $("probe").disabled=true; $("checked").textContent="проверяю…"; try{await api("/api/probe",{});}finally{$("probe").disabled=false; refresh(); refreshStats();} };
+$("ex").onclick=()=>api("/api/exchange",{});
+if($("openrdpapp")) $("openrdpapp").onclick=()=>{ if(window.MostAndroid&&MostAndroid.openRdpApp) MostAndroid.openRdpApp(); };
+$("auto").onchange=async e=>{ try{await api("/api/autostart",{On:e.target.checked});}catch(x){ $("perr2").textContent=x.message; } refresh(); };
+$("quit").onclick=async()=>{ if(window.MostAndroid){ if(confirm("Выключить «Мост»? Каналы и рабочий стол отключатся.")) MostAndroid.quit(); return; } if(confirm("Выключить «Мост»? Окно рабочего стола закроется, сам рабочий стол на сервере останется.")){ await api("/api/quit",{}); document.body.innerHTML="<main style='padding:40px'><h1>Мост выключен</h1><p class='sub'>Окно закроется само.</p></main>"; setTimeout(()=>window.close(),1500); } };
+$("px").onchange=async e=>{ $("pxerr").textContent=""; try{await api("/api/proxy",{On:e.target.checked});}catch(x){$("pxerr").textContent=x.message;} refresh(); };
+$("pxcheck").onclick=async()=>{ $("pxip").textContent="проверяю…"; try{const j=await api("/api/exitip"); $("pxip").textContent=j.ip+" — через "+(NAMES[j.via]||j.via);}catch(x){$("pxip").textContent=x.message;} };
+$("lchrome").onclick=async()=>{ $("pxerr").textContent=""; try{await api("/api/launch",{What:"chrome"});}catch(x){$("pxerr").textContent=x.message;} };
+$("lclaude").onclick=async()=>{ $("pxerr").textContent=""; try{await api("/api/launch",{What:"claude"});}catch(x){$("pxerr").textContent=x.message;} };
+$("devrefresh").onclick=loadDevices;
+$("invbtn").onclick=async()=>{ $("inverr").textContent=""; const n=$("invname").value.trim(); if(!n){$("inverr").textContent="Введите название устройства";return;}
+  $("invbtn").disabled=true;
+  try{ const inv=await api("/api/invite",{Name:n}); const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(inv,null,1)],{type:"application/json"})); a.download="приглашение-"+n.replace(/[^\p{L}\p{N}_-]+/gu,"-")+".json"; a.click();
+    $("invname").value=""; loadDevices(); }catch(e){ $("inverr").textContent=e.message; } finally{ $("invbtn").disabled=false; } };
+// ----- обновления -----
+async function loadUpdate(){ try{ const u=await api("/api/update");
+  $("updline").textContent=u.available?("доступна версия "+u.available+(u.notes?(" — "+u.notes):"")):(u.error?u.error:("у вас последняя версия "+u.current+(u.checked?(" · проверено в "+u.checked):"")));
+  $("updapply").hidden=!u.available; $("updbanner").hidden=!u.available;
+  if(u.available){ $("updtitle").textContent="Доступно обновление "+u.available; $("updnotes").textContent=u.notes||"Скачано и проверено (подпись). Займёт несколько секунд, рабочий стол переподключится сам."; }
+}catch(e){} }
+async function applyUpdate(){ if(!confirm("Обновить «Мост»? Программа перезапустится, открытый рабочий стол переподключится сам.")) return;
+  try{ await api("/api/update/apply",{}); document.body.innerHTML="<main style='padding:40px'><h1>Обновляюсь…</h1><p class='sub'>Новая версия откроет своё окно через несколько секунд, это окно закроется само.</p></main>"; setTimeout(()=>window.close(),2500); }catch(e){ alert(e.message); } }
+$("updcheck").onclick=async()=>{ $("updline").textContent="проверяю…"; try{ await api("/api/update/check",{}); }catch(e){} loadUpdate(); };
+$("updapply").onclick=applyUpdate; $("updapply2").onclick=applyUpdate;
+loadUpdate(); setInterval(loadUpdate,60000);
+// ----- несколько серверов -----
+async function loadServers(){
+  try{ const list=await api("/api/profiles");
+    $("srvlist").innerHTML=list.map(p=>'<div class="ch"><span class="dot '+(p.active?"ok":"")+'"></span><div class="chname">'+esc(p.name)+(p.active?'<span class="pill live">активный</span>':'')+(p.admin?'<span class="pill">владелец</span>':'')+'<small>'+esc(p.server)+'</small></div><div class="chright" style="display:flex;gap:6px;justify-content:flex-end">'
+      +(p.active?'':'<button class="btn" data-use="'+p.id+'">Переключиться</button><button class="btn danger" data-del="'+p.id+'" data-n="'+esc(p.name)+'">Удалить</button>')+'</div></div>').join("")||"Серверов нет";
+    $("srvlist").querySelectorAll("[data-use]").forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ await api("/api/profiles/use",{ID:b.dataset.use}); await refresh(); loadServers(); show("home"); }catch(e){ alert(e.message); } });
+    $("srvlist").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm("Удалить сервер «"+b.dataset.n+"» из программы? На самом сервере ничего не изменится.")) return; try{ await api("/api/profiles/delete",{ID:b.dataset.del}); loadServers(); }catch(e){ alert(e.message); } });
+  }catch(e){ $("srvlist").textContent=e.message; }
+}
+// ----- мастер «Новый сервер» -----
+let svAuth="pw", svPoll=null;
+document.querySelectorAll("#sv-auth button").forEach(b=>b.onclick=()=>{svAuth=b.dataset.a; document.querySelectorAll("#sv-auth button").forEach(x=>x.setAttribute("aria-pressed",x===b)); $("sv-pwbox").hidden=svAuth!=="pw"; $("sv-keybox").hidden=svAuth!=="key";});
+function svReq(){ return {host:$("sv-host").value.trim(),port:+$("sv-port").value||22,user:$("sv-user").value.trim(),name:$("sv-name").value.trim(),
+  password:svAuth==="pw"?$("sv-pw").value:"",key:svAuth==="key"?$("sv-key").value:"",desktop:$("sv-desk").checked,chrome:$("sv-chrome").checked,claude:$("sv-claude").checked,awg_port:+$("sv-awg").value||443,domain:$("sv-domain").value.trim(),reality_domain:$("sv-rdomain").value.trim()}; }
+$("sv-check").onclick=async()=>{ $("sv-err").textContent=""; $("sv-check").disabled=true; $("sv-check").textContent="Подключаюсь…";
+  try{ const i=await api("/api/setup/inspect",svReq());
+    const w=(i.warnings||[]).map(x=>'<div class="err">⚠ '+esc(x)+'</div>').join("");
+    $("sv-info").innerHTML='<div class="kpis" style="margin-bottom:10px"><div class="kpi"><b style="font-size:16px">'+esc(i.os)+'</b><span>система</span></div><div class="kpi"><b>'+esc(i.cpu)+'</b><span>ядер</span></div><div class="kpi"><b>'+(Math.round(i.ram/102.4)/10)+' ГБ</b><span>память</span></div><div class="kpi"><b>'+esc(i.disk)+' ГБ</b><span>свободно на диске</span></div></div>'
+      +'<div class="hint">Виртуализация: '+esc(i.virt||"—")+' · KVM внутри: '+esc(i.kvm)+' · занятые порты: '+esc(i.busy||"—")+(i.prev==="да"?' · <b>«Мост» здесь уже ставился — повторная подготовка ничего не сломает</b>':'')+'</div>'+w;
+    $("sv-fp").textContent=i.fingerprint; $("sv-fpok").checked=false; $("sv-start").disabled=true; window.svFP=i.fingerprint;
+    $("sv-form").hidden=true; $("sv-inspect").hidden=false;
+  }catch(e){ $("sv-err").textContent=e.message; } finally{ $("sv-check").disabled=false; $("sv-check").textContent="Проверить сервер"; } };
+$("sv-desk").onchange=e=>{ $("sv-chromerow").hidden=$("sv-clauderow").hidden=!e.target.checked; };
+$("sv-fpok").onchange=e=>$("sv-start").disabled=!e.target.checked;
+$("sv-back").onclick=()=>{ $("sv-inspect").hidden=true; $("sv-form").hidden=false; };
+$("sv-start").onclick=async()=>{ $("sv-err2").textContent=""; const r=svReq(); r.hostkey=window.svFP;
+  try{ await api("/api/setup/start",r); $("sv-inspect").hidden=true; $("sv-run").hidden=false; svWatch(); }catch(e){ $("sv-err2").textContent=e.message; } };
+function svWatch(){ const t0=Date.now(); clearInterval(svPoll); svPoll=setInterval(async()=>{ let st; try{ st=await api("/api/setup/state"); }catch(e){ return; }
+  const steps=st.steps||[];
+  $("sv-steps").innerHTML=steps.map((x,i)=>{ const cur=st.running&&i===steps.length-1; return '<div class="stp '+(cur?"cur":"")+'"><i>'+(cur?"":"✓")+'</i>'+esc(x.replace(/^\d+\/\d+ /,""))+'</div>'; }).join("")||'<div class="hint">Передаю файлы на сервер…</div>';
+  $("sv-log").textContent=(st.log||[]).slice(-120).join("\n"); $("sv-time").textContent="· "+Math.floor((Date.now()-t0)/60000)+" мин";
+  $("sv-err3").textContent=st.error?("Ошибка: "+st.error):""; $("sv-done").hidden=!st.done; $("sv-retry").hidden=!st.error; $("sv-cdnhint").hidden=!$("sv-domain").value.trim();
+  if(!st.running) clearInterval(svPoll); },2000); }
+// после установки — чистая форма (ход установки, пароль и ключ из полей убрать)
+function svReset(){ clearInterval(svPoll); $("sv-run").hidden=true; $("sv-inspect").hidden=true; $("sv-form").hidden=false;
+  ["sv-pw","sv-key","sv-host","sv-name","sv-rdomain","sv-domain"].forEach(id=>{ if($(id)) $(id).value=""; }); $("sv-steps").innerHTML=""; $("sv-log").textContent=""; }
+$("sv-use").onclick=async()=>{ try{ await api("/api/setup/use",{}); svReset(); await refresh(); show("home"); }catch(e){ $("sv-err3").textContent=e.message; } };
+$("sv-close").onclick=async()=>{ if(!confirm("Закрыть итог установки? Если профиль не скачан и на сервер не переключались, его придётся получить заново (мастер можно запустить повторно).")) return;
+  try{ await api("/api/setup/reset",{}); }catch(e){} svReset(); };
+$("sv-dl").onclick=async()=>{ const r=await fetch("/api/setup/profile",{headers:{"X-Token":T}}); const b=await r.blob(); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="profile-"+($("sv-name").value.trim()||$("sv-host").value.trim())+".json"; a.click(); };
+$("sv-reatt").onclick=async()=>{ try{ await api("/api/setup/reattach",{}); svWatch(); }catch(e){ $("sv-err3").textContent=e.message; } };
+$("sv-again").onclick=()=>{ $("sv-run").hidden=true; $("sv-inspect").hidden=false; };
+$("gosetup").onclick=()=>{ page="server"; document.querySelectorAll(".page").forEach(x=>x.classList.toggle("on",x.id==="p-server")); };
+window.addEventListener("resize",drawAll);
+refresh(); refreshStats(); setInterval(refresh,2000); setInterval(refreshStats,1000); setInterval(()=>{ if(page==="log") loadLog(); },3000);
+</script>
+</body>
+</html>

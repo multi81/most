@@ -1,0 +1,24 @@
+# сборки — не в репозиторий
+dist/
+*.exe
+*.apk
+*.aab
+*.aar
+*.syso
+android/app/libs/
+android/app/build/
+android/.gradle/
+android/build/
+android/app/src/main/res/mipmap-*/
+
+# секреты и локальные настройки — никогда не в репозиторий
+android/signing.properties
+android/local.properties
+*.jks
+*.keystore
+*.key
+*.pem
+profile*.json
+приглашение*.json
+invite*.json
+.env
