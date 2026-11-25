@@ -30,7 +30,7 @@ var webFS embed.FS
 const uiAddr = "127.0.0.1:47811"
 const rdpPort = 33400
 
-var version = "0.9.25"
+var version = "0.9.26"
 
 func itoa(i int) string { return strconv.Itoa(i) }
 

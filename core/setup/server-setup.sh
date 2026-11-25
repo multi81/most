@@ -544,6 +544,11 @@ fi
 
 # ---------------------------------------------------------------- 8. проверка
 step "Проверка служб"
+# папка ключей SSH устройств: служба может писать только в уже существующую (ReadWritePaths с «-» пропускает
+# отсутствующую при запуске) — создать и перезапустить службу, иначе устройства по приглашению остаются без канала SSH
+if id cloud >/dev/null 2>&1 && [ ! -d /home/cloud/.ssh ]; then
+  install -d -m700 -o cloud -g cloud /home/cloud/.ssh && systemctl restart most-admin
+fi
 sleep 2
 FAIL=""
 for s in awg-quick@awg0 unbound most-xray most-admin fail2ban; do systemctl is-active -q $s || FAIL="$FAIL $s"; done
