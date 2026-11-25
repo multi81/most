@@ -66,6 +66,17 @@ done
 step "Обновление и защита (ufw, fail2ban, автообновления, тюнинг сети)"
 apt_up
 apt_i ufw fail2ban unattended-upgrades curl git golang-go build-essential pkg-config unbound python3 iptables >/dev/null
+# часовой пояс — страны, где стоит сервер (по его адресу). Один раз: при повторном запуске выбранный вручную не трогаем.
+if [ ! -f /etc/most-admin/.tz-auto ]; then
+  TZN=$(curl -fsS --max-time 8 "https://ipwho.is/?fields=timezone" 2>/dev/null | python3 -c 'import sys,json;print(json.load(sys.stdin)["timezone"]["id"])' 2>/dev/null || true)
+  [ -n "$TZN" ] && [ -f "/usr/share/zoneinfo/$TZN" ] || TZN=$(curl -fsS --max-time 8 "http://ip-api.com/line/?fields=timezone" 2>/dev/null || true)
+  if [ -n "$TZN" ] && [ -f "/usr/share/zoneinfo/$TZN" ] && timedatectl set-timezone "$TZN"; then
+    echo "##INFO часовой пояс: $TZN (по адресу сервера)"
+    install -d -m700 /etc/most-admin && : > /etc/most-admin/.tz-auto
+  else
+    echo "##INFO часовой пояс не определился — оставлен $(timedatectl show -p Timezone --value 2>/dev/null)"
+  fi
+fi
 cat > /etc/sysctl.d/90-most.conf <<'EOF'
 # «Мост»: сеть как на узлах VPN
 net.core.default_qdisc = fq

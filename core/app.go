@@ -30,7 +30,7 @@ var webFS embed.FS
 const uiAddr = "127.0.0.1:47811"
 const rdpPort = 33400
 
-var version = "0.9.24"
+var version = "0.9.25"
 
 func itoa(i int) string { return strconv.Itoa(i) }
 
@@ -211,6 +211,22 @@ func (a *App) routes(mux *http.ServeMux) {
 		}
 		a.use(p)
 		reply(w, map[string]string{"ok": "1"})
+	})
+	// страница программы на GitHub — в браузере (в своём окне WebView2 ссылка увела бы окно программы)
+	api("/api/open-repo", func(w http.ResponseWriter, r *http.Request) {
+		openLink(repoURL)
+		reply(w, map[string]any{"ok": "1"})
+	})
+	// пароль пользователя рабочего стола — по кнопке «Показать»/«Скопировать» на главной (в /api/state его нет)
+	api("/api/rdp-password", func(w http.ResponseWriter, r *http.Request) {
+		a.mu.Lock()
+		p := a.profile
+		a.mu.Unlock()
+		if p == nil || p.RDPUser == "" {
+			fail(w, errNoProfile)
+			return
+		}
+		reply(w, map[string]any{"user": p.RDPUser, "password": p.RDPPassword})
 	})
 	api("/api/connect", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.Lock()

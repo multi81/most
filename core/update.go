@@ -43,6 +43,7 @@ type Updater struct {
 	checked time.Time
 	err     string
 	busy    bool
+	source  string // откуда пришёл ответ последней проверки: «GitHub» или «сервер»
 }
 
 // newer: "0.6.1" > "0.6.0"
@@ -144,17 +145,27 @@ func (u *Updater) Check(chs []Channel) {
 	setErr := func(e string) { u.mu.Lock(); u.err = e; u.mu.Unlock() }
 	var info UpdateInfo
 	fromGH := ghInfo(&info) == nil
+	src := "GitHub"
+	if !fromGH {
+		src = "сервер"
+	}
 	if !fromGH { // GitHub недоступен — спросить сервер через каналы
 		info = UpdateInfo{}
 		if err := adminCall(chs, "GET", "/api/update", "", nil, &info); err != nil {
 			if strings.Contains(err.Error(), "обновлений нет") {
 				setErr("")
+				u.mu.Lock()
+				u.source = src
+				u.mu.Unlock()
 				return
 			}
 			setErr("проверка не удалась: " + err.Error())
 			return
 		}
 	}
+	u.mu.Lock()
+	u.source = src
+	u.mu.Unlock()
 	if !newer(info.Version, version) {
 		setErr("")
 		return
@@ -192,6 +203,9 @@ func (u *Updater) Check(chs []Channel) {
 	u.avail, u.file, u.err = &info, dst, ""
 	u.mu.Unlock()
 }
+
+// repoURL — страница программы: исходный код и выпуски (показывается в окне программы).
+const repoURL = "https://github.com/multi81/most"
 
 // ghBase — файлы последнего выпуска на GitHub (переадресация на хранилище GitHub).
 const ghBase = "https://github.com/multi81/most/releases/latest/download/"
@@ -249,7 +263,7 @@ func sumHex(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(
 func (u *Updater) state() map[string]any {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	st := map[string]any{"current": version, "busy": u.busy, "error": u.err}
+	st := map[string]any{"current": version, "busy": u.busy, "error": u.err, "source": u.source, "repo": repoURL}
 	if !u.checked.IsZero() {
 		st["checked"] = u.checked.Format("15:04")
 	}

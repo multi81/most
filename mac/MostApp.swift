@@ -152,11 +152,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let js = """
         window.MostAndroid = {
           copy: t => webkit.messageHandlers.most.postMessage({copy: t}),
-          quit: => webkit.messageHandlers.most.postMessage({quit: 1}),
-          platform: => "mac",
-          rdpInstalled: => \(installed ? "true" : "false"),
-          installRdp: => webkit.messageHandlers.most.postMessage({store: 1}),
-          openRdpApp: => webkit.messageHandlers.most.postMessage({openapp: 1})
+          quit: () => webkit.messageHandlers.most.postMessage({quit: 1}),
+          platform: () => "mac",
+          rdpInstalled: () => \(installed ? "true" : "false"),
+          installRdp: () => webkit.messageHandlers.most.postMessage({store: 1}),
+          openRdpApp: () => webkit.messageHandlers.most.postMessage({openapp: 1})
         };
         """
         uc.addUserScript(WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: true))

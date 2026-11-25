@@ -9,3 +9,4 @@ func setAutostart(bool) error { return errors.New("на этой платфор�
 
 func exchangeDir() string { return "" }
 func openFolder(string)   {}
+func openLink(string)     {} // Android: ссылку открывает само окно (WebView → браузер)

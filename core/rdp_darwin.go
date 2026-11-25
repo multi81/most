@@ -32,6 +32,8 @@ func exchangeDir() string {
 
 func openFolder(dir string) { _ = exec.Command("open", dir).Start() }
 
+func openLink(u string) { _ = exec.Command("open", u).Start() }
+
 func launchRDP(p *Profile, port int) (rdpProc, error) {
 	exchangeDir()
 	body := fmt.Sprintf("full address:s:127.0.0.1:%d\nusername:s:%s\nprompt for credentials:i:0\nautoreconnection enabled:i:1\n"+

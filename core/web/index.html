@@ -36,6 +36,8 @@ nav{padding:20px 12px;display:flex;flex-direction:column;gap:4px;border-right:1p
 .tab:hover{background:var(--line)}
 .tab[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .navfoot{margin-top:auto;padding:10px 12px;color:var(--ink-3);font-size:12px}
+.navfoot .repo{display:block;margin-top:2px}
+a.repo{color:var(--accent);text-decoration:none}a.repo:hover{text-decoration:underline}
 main{padding:28px 32px 40px;max-width:980px;width:100%}
 h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px;font-weight:650}
 .sub{color:var(--ink-2);margin:0 0 22px}
@@ -163,6 +165,7 @@ nav{background:var(--glass);backdrop-filter:blur(24px) saturate(180%);-webkit-ba
 .seg button[aria-pressed=true]{box-shadow:0 1px 2px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.06)}
 /* ряд кнопок: по центру, обычная кнопка рядом с большой — той же высоты (17.11: «Скопировать / Готово» стояли криво) */
 .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pwrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.pwval code{font-size:14px;user-select:all;-webkit-user-select:all}
 .actions .btn{height:40px;padding:0 18px;font-size:14.5px;border-radius:10px}
 /* карточки с кнопкой внизу: в одном ряду кнопки на одном уровне при любой длине текста над ними */
 .card-act{display:flex;flex-direction:column}.card-act>.hint{margin-bottom:14px}.card-act>.btn-main:last-child,.card-act>.btn:last-child{margin-top:auto}
@@ -288,6 +291,12 @@ body:not(.is-mac) .mac-only{display:none!important}
           <div class="tile"><i class="ti" style="--c:var(--rx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v16M6 14l6 6 6-6"/></svg></i><b id="k-rx">0</b><span>приём</span></div>
           <div class="tile"><i class="ti" style="--c:var(--tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V4M6 10l6-6 6 6"/></svg></i><b id="k-tx">0</b><span>отдача</span></div>
         </div>
+        <div class="card span-12" id="pwcard" hidden>
+          <div class="label">Пароль рабочего стола</div>
+          <div class="pwrow"><div class="pwval"><span class="hint">Пользователь</span> <code id="pw-user">cloud</code> <span class="hint">пароль</span> <code id="pw-val">••••••••••••</code></div>
+            <div class="actions"><button class="btn" id="pw-show">Показать</button><button class="btn" id="pw-copy">Скопировать</button></div></div>
+          <p class="hint" style="margin:10px 0 0">Входит на рабочий стол «Мост» сам — вводить ничего не нужно. Этот пароль сервер спросит, когда меняете <b>системные настройки</b> (часовой пояс, установка программ, обновления) или пишете <code>sudo</code> в терминале. Пароль root от хостера в этих окнах не подходит.</p>
+        </div>
         <div class="card span-12">
           <div class="label">Скорость, последние 2 минуты</div>
           <canvas id="speed" height="180"></canvas>
@@ -408,6 +417,7 @@ body:not(.is-mac) .mac-only{display:none!important}
     <section class="page" id="p-settings">
       <h1>Настройки</h1>
       <p class="sub" id="verline"></p>
+      <p class="hint" style="margin:-6px 0 16px">Программа и обновления — с <a class="repo" href="https://github.com/multi81/most">github.com/multi81/most</a>: исходный код и все выпуски.</p>
       <div class="card" style="margin-bottom:16px"><div class="label">Серверы</div><div id="srvlist" class="hint">…</div></div>
       <div class="card">
         <div class="row"><div><b id="autolbl">Запускать вместе с Windows</b><small>Без окна, каналы прогреваются заранее — подключение сразу быстрое</small></div>
@@ -471,12 +481,13 @@ function drawAll(){
 const NAMES={awg:"AmneziaWG",cdn:"Xray через CDN",xray:"Xray Reality",ssh:"SSH"};
 function render(){
   if(!S) return;
-  $("navfoot").textContent="версия "+S.version; applyPlatform();
+  $("navfoot").innerHTML='версия '+esc(S.version)+'<a class="repo" href="https://github.com/multi81/most">github.com/multi81/most</a>'; applyPlatform();
   if(!S.profile){ if(page!=="server") document.querySelectorAll(".page").forEach(x=>x.classList.toggle("on",x.id==="p-setup")); return; }
   if(!document.querySelector(".page.on")||$("p-setup").classList.contains("on")) show(page);
   const RANK={awg:0,cdn:1,xray:2,ssh:3}; // как в программе: надёжность важнее задержки
   const chs=S.channels||[], live=chs.filter(c=>c.ok).sort((a,b)=>(RANK[a.id]-RANK[b.id])||(a.ms-b.ms));
   const active=chs.find(c=>c.active), cur=active||(S.mode!=="auto"?chs.find(c=>c.id===S.mode&&c.ok):live[0]);
+  $("pwcard").hidden=!S.profile.user; $("pw-user").textContent=S.profile.user||"";
   $("srvname").textContent=S.profile.name||"Сервер"; $("srvsub").textContent=S.profile.server+" · пользователь "+S.profile.user;
   const orb=$("orb"), go=$("go"), st=$("status"), gl=$("golabel");
   orb.className="power-wrap"+(S.connected?" on":(live.length?" ready":" wait"));
@@ -567,8 +578,20 @@ $("invbtn").onclick=async()=>{ $("inverr").textContent=""; const n=$("invname").
     a.href=URL.createObjectURL(new Blob([JSON.stringify(inv,null,1)],{type:"application/json"})); a.download="приглашение-"+n.replace(/[^\p{L}\p{N}_-]+/gu,"-")+".json"; a.click();
     $("invname").value=""; loadDevices(); }catch(e){ $("inverr").textContent=e.message; } finally{ $("invbtn").disabled=false; } };
 // ----- обновления -----
+// пароль рабочего стола: показать на 30 с / скопировать (в /api/state его нет — только по кнопке)
+let pwTimer=0;
+async function rdpPassword(){ return (await api("/api/rdp-password")).password; }
+function copyText(t){ if(window.MostAndroid) MostAndroid.copy(t); else if(navigator.clipboard) navigator.clipboard.writeText(t); }
+$("pw-show").onclick=async()=>{ const v=$("pw-val");
+  if(pwTimer){ clearTimeout(pwTimer); pwTimer=0; v.textContent="••••••••••••"; $("pw-show").textContent="Показать"; return; }
+  try{ v.textContent=await rdpPassword(); $("pw-show").textContent="Скрыть";
+    pwTimer=setTimeout(()=>{ pwTimer=0; v.textContent="••••••••••••"; $("pw-show").textContent="Показать"; },30000); }catch(e){ v.textContent=e.message; } };
+$("pw-copy").onclick=async()=>{ try{ copyText(await rdpPassword()); const b=$("pw-copy"); b.textContent="Скопировано"; setTimeout(()=>b.textContent="Скопировать",1500); }catch(e){} };
+// ссылки на GitHub: на Windows — через программу (иначе ссылка увела бы само окно), на маке и Android окно открывает браузер само
+document.addEventListener("click",e=>{ const a=e.target.closest&&e.target.closest("a.repo"); if(!a) return;
+  if(S&&S.platform==="windows"){ e.preventDefault(); api("/api/open-repo",{}).catch(()=>{}); } });
 async function loadUpdate(){ try{ const u=await api("/api/update");
-  $("updline").textContent=u.available?("доступна версия "+u.available+(u.notes?(" — "+u.notes):"")):(u.error?u.error:("у вас последняя версия "+u.current+(u.checked?(" · проверено в "+u.checked):"")));
+  $("updline").textContent=u.available?("доступна версия "+u.available+(u.notes?(" — "+u.notes):"")):(u.error?u.error:("у вас последняя версия "+u.current+(u.checked?(" · проверено в "+u.checked+(u.source?(" ("+u.source+")"):"")):"")));
   $("updapply").hidden=!u.available; $("updbanner").hidden=!u.available;
   if(u.available){ $("updtitle").textContent="Доступно обновление "+u.available; $("updnotes").textContent=u.notes||"Скачано и проверено (подпись). Займёт несколько секунд, рабочий стол переподключится сам."; }
 }catch(e){} }

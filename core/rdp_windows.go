@@ -106,3 +106,5 @@ func (p cmdProc) Wait() error { return p.c.Wait() }
 func (p cmdProc) Kill() error { return p.c.Process.Kill() }
 
 func openFolder(dir string) { _ = exec.Command("explorer", dir).Start() }
+
+func openLink(u string) { _ = exec.Command("rundll32", "url.dll,FileProtocolHandler", u).Start() }
