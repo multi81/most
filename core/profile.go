@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"encoding/json"
 	"errors"
@@ -159,6 +160,42 @@ func listProfiles() []ProfileInfo {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
+}
+
+// SetupInfo — что мастеру «Новый сервер» подставить для повторной проверки и доустановки уже установленного
+// сервера (пароль root не хранится — его вводят каждый раз).
+type SetupInfo struct {
+	Host          string `json:"host"`
+	Port          int    `json:"port"`
+	Name          string `json:"name"`
+	Desktop       bool   `json:"desktop"`
+	AWGPort       int    `json:"awg_port"`
+	Domain        string `json:"domain"`
+	RealityDomain string `json:"reality_domain"`
+}
+
+var (
+	awgEndpointRe = regexp.MustCompile(`(?m)^\s*Endpoint\s*=\s*\S+:(\d+)\s*$`)
+	deviceSuffix  = regexp.MustCompile(`\s*\([^()]*\)\s*$`) // «Германия (pc)» — имя у устройства по приглашению
+)
+
+func setupInfo(p *Profile) SetupInfo {
+	si := SetupInfo{Host: p.Server, Port: 22, Name: deviceSuffix.ReplaceAllString(p.Name, ""), Desktop: p.RDPUser != "", AWGPort: 443}
+	if p.SSH != nil && p.SSH.Port > 0 {
+		si.Port = p.SSH.Port
+	}
+	if p.AWG != nil {
+		if m := awgEndpointRe.FindStringSubmatch(p.AWG.Conf); m != nil {
+			si.AWGPort, _ = strconv.Atoi(m[1])
+		}
+	}
+	if p.Xray != nil {
+		si.Domain = p.Xray.WSHost
+		if p.Xray.SNI != "" && p.Xray.SNI != "www.samsung.com" { // своё имя — значит, маскировка под свой домен
+			si.RealityDomain = p.Xray.SNI
+		}
+	}
+	return si
 }
 
 func profileByID(id string) (*Profile, error) {

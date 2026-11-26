@@ -30,7 +30,7 @@ var webFS embed.FS
 const uiAddr = "127.0.0.1:47811"
 const rdpPort = 33400
 
-var version = "0.9.26"
+var version = "0.9.27"
 
 func itoa(i int) string { return strconv.Itoa(i) }
 
@@ -428,6 +428,15 @@ func (a *App) routes(mux *http.ServeMux) {
 	})
 	// ----- несколько серверов -----
 	api("/api/profiles", func(w http.ResponseWriter, r *http.Request) { reply(w, listProfiles()) })
+	// данные установленного сервера для мастера: проверить и доустановить без повторного ввода (кроме пароля root)
+	api("/api/profiles/setup-info", func(w http.ResponseWriter, r *http.Request) {
+		p, err := profileByID(r.URL.Query().Get("id"))
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		reply(w, setupInfo(p))
+	})
 	api("/api/profiles/use", func(w http.ResponseWriter, r *http.Request) {
 		var req struct{ ID string }
 		_ = json.NewDecoder(r.Body).Decode(&req)

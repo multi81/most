@@ -364,6 +364,11 @@ body:not(.is-mac) .mac-only{display:none!important}
       <h1>Новый сервер</h1>
       <p class="sub">Мастер сам подготовит чистый сервер Ubuntu 24.04 или 26.04: защита, AmneziaWG, Xray, свой DNS, управление устройствами и, по желанию, рабочий стол с RDP. В конце — готовый профиль.</p>
       <div class="grid" id="sv-form">
+        <div class="card span-12" id="sv-known" hidden>
+          <div class="label">Уже установленные — проверить и доустановить</div>
+          <p class="hint" style="margin:0 0 6px">Выберите сервер — адрес, порт, домены и настройки подставятся сами, останется ввести пароль root. Мастер доставит недостающее (например, канал SSH), рабочие службы и открытые сеансы не тронет, пароль рабочего стола сохранится.</p>
+          <div id="sv-knownlist"></div>
+        </div>
         <div class="card span-12">
           <div class="label">1. Доступ к серверу</div>
           <div class="fgrid">
@@ -445,7 +450,7 @@ const CHCOL={awg:"#30a14e",cdn:"#0a6cff",xray:"#a259ff",ssh:"#d98a00"};
 let page="home", S=null;
 
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.p));
-function show(p){page=p; if(p==="devices") loadDevices(); if(p==="settings" && typeof loadServers==="function") loadServers();document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.p===p));
+function show(p){page=p; if(p==="devices") loadDevices(); if(p==="server" && typeof loadKnown==="function") loadKnown(); if(p==="settings" && typeof loadServers==="function") loadServers();document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.p===p));
   document.querySelectorAll(".page").forEach(x=>x.classList.toggle("on",x.id==="p-"+p)); if(p==="log") loadLog(); drawAll();}
 
 /* график: плавные линии с заливкой, по ширине холста, с учётом плотности пикселей */
@@ -610,6 +615,18 @@ async function loadServers(){
   }catch(e){ $("srvlist").textContent=e.message; }
 }
 // ----- мастер «Новый сервер» -----
+// установленные серверы: подставить их данные в форму мастера (пароль root — вводят каждый раз)
+async function loadKnown(){
+  try{ const list=await api("/api/profiles"); $("sv-known").hidden=!list.length;
+    $("sv-knownlist").innerHTML=list.map(p=>'<div class="row"><div><b>'+esc(p.name)+'</b><small>'+esc(p.server)+'</small></div><button class="btn" data-fill="'+p.id+'">Подставить</button></div>').join("");
+    $("sv-knownlist").querySelectorAll("[data-fill]").forEach(b=>b.onclick=async()=>{ try{ const i=await api("/api/profiles/setup-info?id="+encodeURIComponent(b.dataset.fill));
+      $("sv-host").value=i.host||""; $("sv-port").value=i.port||22; $("sv-user").value="root"; $("sv-name").value=i.name||"";
+      $("sv-desk").checked=!!i.desktop; $("sv-awg").value=i.awg_port||443; $("sv-domain").value=i.domain||""; $("sv-rdomain").value=i.reality_domain||"";
+      document.querySelector('#sv-auth button[data-a="pw"]').click(); $("sv-pw").value="";
+      if($("sv-desk").onchange) $("sv-desk").onchange({target:$("sv-desk")});
+      $("sv-pw").scrollIntoView({block:"center",behavior:"smooth"}); $("sv-pw").focus(); $("sv-pw").placeholder="Пароль root от хостера";
+    }catch(e){ alert(e.message); } });
+  }catch(e){ $("sv-known").hidden=true; } }
 let svAuth="pw", svPoll=null;
 document.querySelectorAll("#sv-auth button").forEach(b=>b.onclick=()=>{svAuth=b.dataset.a; document.querySelectorAll("#sv-auth button").forEach(x=>x.setAttribute("aria-pressed",x===b)); $("sv-pwbox").hidden=svAuth!=="pw"; $("sv-keybox").hidden=svAuth!=="key";});
 function svReq(){ return {host:$("sv-host").value.trim(),port:+$("sv-port").value||22,user:$("sv-user").value.trim(),name:$("sv-name").value.trim(),
