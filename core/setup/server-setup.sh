@@ -66,6 +66,10 @@ done
 step "Обновление и защита (ufw, fail2ban, автообновления, тюнинг сети)"
 apt_up
 apt_i ufw fail2ban unattended-upgrades curl git golang-go build-essential pkg-config unbound python3 iptables >/dev/null
+# автообновления не перезапускают xrdp: перезапуск sesman теряет открытые сеансы рабочего стола (чёрный экран)
+install -d /etc/needrestart/conf.d
+printf '%s\n' '# «Мост»: не перезапускать xrdp и xrdp-sesman после обновлений — sesman теряет открытые сеансы рабочего стола' \
+  '$nrconf{override_rc}{qr(^xrdp)} = 0;' > /etc/needrestart/conf.d/50-most-xrdp.conf
 # часовой пояс — страны, где стоит сервер (по его адресу). Один раз: при повторном запуске выбранный вручную не трогаем.
 if [ ! -f /etc/most-admin/.tz-auto ]; then
   TZN=$(curl -fsS --max-time 8 "https://ipwho.is/?fields=timezone" 2>/dev/null | python3 -c 'import sys,json;print(json.load(sys.stdin)["timezone"]["id"])' 2>/dev/null || true)
@@ -534,8 +538,16 @@ EOF
     k kdeglobals General BrowserApplication google-chrome.desktop
   fi
   systemctl enable xrdp xrdp-sesman >/dev/null 2>&1
-  if [ "$XRDP_PRE" != "$(sum_of $XI $SI /etc/xrdp/xrdp_keyboard.ini /usr/sbin/xrdp-chansrv)" ] || ! systemctl is-active -q xrdp || ! systemctl is-active -q xrdp-sesman; then
+  if ! systemctl is-active -q xrdp || ! systemctl is-active -q xrdp-sesman; then
     systemctl restart xrdp-sesman xrdp
+  elif [ "$XRDP_PRE" != "$(sum_of $XI $SI /etc/xrdp/xrdp_keyboard.ini /usr/sbin/xrdp-chansrv)" ]; then
+    # перезапуск sesman при открытом сеансе «теряет» его: сеанс работает, но вернуться в него нельзя, а новый KDE
+    # не стартует (чёрный экран) — при открытом сеансе не перезапускать, настройки вступят после выхода или перезагрузки
+    if pgrep -u cloud -x Xorg >/dev/null; then
+      echo "##INFO настройки рабочего стола обновлены — вступят в силу после выхода из сеанса или перезагрузки сервера (открытый сеанс не тронут)"
+    else
+      systemctl restart xrdp-sesman xrdp
+    fi
   else
     echo "xrdp: без изменений — не перезапускаю (открытые сеансы рабочего стола не рвутся)"
   fi
